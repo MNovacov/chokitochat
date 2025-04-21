@@ -1,12 +1,44 @@
-# React + Vite
+  <h1>Chokito Chat</h1>
+  <p><strong>Chokito Chat</strong> es una aplicación de chat en tiempo real construida con <code>React</code>, <code>Vite</code> y <code>Firebase</code>.</p>
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+  <h2>🚀 Tecnologías</h2>
+  <ul>
+    <li>React 18</li>
+    <li>Vite</li>
+    <li>Firebase Authentication y Firestore</li>
+    <li>React Router DOM</li>
+    <li>Despliegue en Vercel</li>
+  </ul>
 
-Currently, two official plugins are available:
+  <h2>📦 Instalación</h2>
+  <pre><code>npm install</code></pre>
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+  <h2>🔧 Desarrollo local</h2>
+  <pre><code>npm run dev</code></pre>
 
-## Expanding the ESLint configuration
+  <h2>🛠️ Build para producción</h2>
+  <pre><code>npm run build</code></pre>
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+  <h2>👀 Preview del build</h2>
+  <pre><code>npm run preview</code></pre>
+
+  <h2>🌐 Vercel</h2>
+  <p>La aplicación está configurada para ser desplegada fácilmente en Vercel en el <a href="https://chokito-chat-git-master-mnovacovs-projects.vercel.app/#/83npxr">siguiente link</a>. </p>
+
+  <h2>📁 Estructura básica</h2>
+  <pre><code>.
+├── public/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── main.jsx
+├── index.html
+├── vite.config.js
+├── vercel.json
+</code></pre>
+
+  <h2>💬 Créditos</h2>
+  <p>Desarrollado por <a href="https://github.com/MNovacov" target="_blank">MNovacov</a>.</p>
+
+</body>
+</html>

@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { ref, push, onValue, off, serverTimestamp } from 'firebase/database';
 import { db } from '../firebase';
-import UserBadge from './UserBadge';
 import '../styles/pixel-art.css';
+import ColorSelector from './ColorSelector';
 
 export default function ChatRoom({ palette }) {
   const { roomId } = useParams();
@@ -12,33 +12,59 @@ export default function ChatRoom({ palette }) {
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const messagesEndRef = useRef(null);
+  const username = state?.username || 'Anónimo';
+  const messageSound = new Audio('/message-sound.mp3');
 
-  // Enviar mensaje
+  const defaultPalette = {
+    primary: '#ff6f61',   // Color del texto o bordes
+    secondary: '#f5f5f5', // Color del fondo de la sala
+  };
+
+  const [currentPalette, setCurrentPalette] = useState(palette || defaultPalette);
+  const [bgColor, setBgColor] = useState('rgb(199, 206, 234)');
+
+  useEffect(() => {
+    document.body.style.backgroundColor = bgColor;
+    return () => {
+      document.body.style.backgroundColor = ''; // limpia cuando sales
+    };
+  }, [bgColor]);
+
+  const handleColorChange = (_, colorValue) => {
+    setBgColor(colorValue);
+  };
+
   const sendMessage = (e) => {
     e.preventDefault();
     if (!message.trim()) return;
-    
+
     push(ref(db, `rooms/${roomId}/messages`), {
-      user: state?.username || 'Anónimo',
+      user: username,
       text: message.trim(),
       timestamp: serverTimestamp(),
-      color: palette.primary
+      color: currentPalette.primary,
     });
     setMessage('');
   };
 
-  // Efectos para datos en tiempo real
   useEffect(() => {
     const messagesRef = ref(db, `rooms/${roomId}/messages`);
     const usersRef = ref(db, `rooms/${roomId}/users`);
-    
-    // Escuchar mensajes
+    let previousCount = 0;
+
     onValue(messagesRef, (snapshot) => {
       const data = snapshot.val() || {};
-      setMessages(Object.values(data));
+      const sorted = Object.values(data).sort((a, b) => a.timestamp - b.timestamp);
+
+      if (sorted.length > previousCount) {
+        const lastMsg = sorted[sorted.length - 1];
+        if (lastMsg.user !== username) messageSound.play();
+      }
+
+      previousCount = sorted.length;
+      setMessages(sorted);
     });
 
-    // Escuchar usuarios
     onValue(usersRef, (snapshot) => {
       const data = snapshot.val() || {};
       setUsers(Object.values(data));
@@ -50,13 +76,40 @@ export default function ChatRoom({ palette }) {
     };
   }, [roomId]);
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Función para actualizar los colores
+  const handlePaletteChange = (colorType, colorValue) => {
+    setCurrentPalette((prevPalette) => ({
+      ...prevPalette,
+      [colorType]: colorValue,
+    }));
+  };
+
+  const renderMessages = () => {
+    let lastUser = null;
+
+    return messages.map((msg, i) => {
+      const showUsername = msg.user !== lastUser;
+      lastUser = msg.user;
+
+      return (
+        <div key={i} className="pixel-message" style={{ borderColor: msg.color }}>
+          {showUsername && (
+            <div style={{ color: msg.color }}>
+              {msg.user}
+            </div>
+          )}
+          <div>{msg.text}</div>
+        </div>
+      );
+    });
+  };
+
   return (
-    <div className="pixel-room" style={{ backgroundColor: palette.secondary }}>
+    <div className="pixel-room" style={{ backgroundColor: currentPalette.secondary }}>
       <div className="room-header">
         <h2 className="pixel-text">SALA: {roomId}</h2>
         <div className="online-count">
@@ -64,46 +117,31 @@ export default function ChatRoom({ palette }) {
         </div>
       </div>
 
+      {/* Selector de colores */}
+      <div className="color-selector-container">
+        <ColorSelector 
+          onChange={handlePaletteChange} 
+          currentPalette={currentPalette} 
+        />
+      </div>
+
       <div className="chat-container">
         <div className="messages-box">
-          {messages.map((msg, i) => (
-            <div key={i} className="pixel-message" style={{ borderColor: msg.color }}>
-              <UserBadge 
-                name={msg.user} 
-                isOnline={users.some(u => u.name === msg.user && u.online)}
-              />
-              <p>{msg.text}</p>
-            </div>
-          ))}
+          {renderMessages()}
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="users-list pixel-border">
-          <h3>JUGADORES:</h3>
-          {users.map((user, i) => (
-            <UserBadge 
-              key={i} 
-              name={user.name} 
-              isOnline={user.online} 
-              showStatus={true}
-            />
-          ))}
-        </div>
+        <form className="message-form" onSubmit={sendMessage}>
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="pixel-input"
+            placeholder="Escribe tu mensaje..."
+          />
+          <button type="submit" className="pixel-button">Enviar</button>
+        </form>
       </div>
-
-      <form onSubmit={sendMessage} className="message-form">
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Escribe algo..."
-          className="pixel-input"
-          maxLength={200}
-        />
-        <button type="submit" className="pixel-button" style={{ backgroundColor: palette.primary }}>
-          ENVIAR
-        </button>
-      </form>
     </div>
   );
 }

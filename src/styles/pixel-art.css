@@ -18,15 +18,116 @@ body {
     border: 3px solid #000;
     padding: 10px;
     margin: 10px 0;
+    box-sizing: border-box; /* Asegura que el padding no afecte el tamaño del elemento */
+}
+
+.pixel-input {
+    width: 100%; /* Hace que los inputs llenen su contenedor */
+    max-width: 400px; /* Maximo tamaño */
+    margin-bottom: 15px; /* Da un pequeño margen inferior */
 }
 
 .pixel-button {
     background-color: #b5ead7;
     cursor: pointer;
-    transition: all 0.1s;
+    transition: all 0.3s ease; /* Suaviza el hover */
+    padding: 10px 20px; /* Aumenta el padding horizontal */
 }
 
 .pixel-button:hover {
     transform: translate(2px, 2px);
     box-shadow: 2px 2px 0 #000;
 }
+
+/* Estilo del contenedor de la sala de chat */
+.pixel-room {
+    background-color: #222;
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 20px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Agregar un fondo para el formulario y los mensajes */
+.message-form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.messages-box {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #333;
+    border-radius: 5px;
+}
+
+.pixel-message {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 2px solid #555;
+    border-radius: 5px;
+    background-color: #444;
+    color: white;
+}
+
+.online-count {
+    color: #00ff00; /* Colores de texto verde para mostrar la cantidad de usuarios online */
+    font-weight: bold;
+}
+
+.room-header h2 {
+    margin-bottom: 10px;
+}
+
+/* Estilos adicionales para el contenedor de los usuarios */
+.users-list {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #222;
+    border-radius: 5px;
+}
+
+/* Estilo para los cuadros de colores (selector de color) */
+.color-selector {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.color-box {
+    width: 30px;
+    height: 30px;
+    margin: 0 5px;
+    border: 2px solid #000;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.color-box:hover {
+    transform: scale(1.1);
+}
+
+/* Estilos para el selector de colores */
+.color-selector {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+  }
+  
+  .color-option button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%; /* Hacer los botones redondos */
+    border: 2px solid #000;
+    margin: 5px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  
+  .color-option button:hover {
+    transform: scale(1.1); /* Efecto al pasar el cursor */
+  }
+  

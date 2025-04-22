@@ -18,20 +18,20 @@ body {
     border: 3px solid #000;
     padding: 10px;
     margin: 10px 0;
-    box-sizing: border-box; /* Asegura que el padding no afecte el tamaño del elemento */
+    box-sizing: border-box;
 }
 
 .pixel-input {
-    width: 100%; /* Hace que los inputs llenen su contenedor */
-    max-width: 400px; /* Maximo tamaño */
-    margin-bottom: 15px; /* Da un pequeño margen inferior */
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 15px;
 }
 
 .pixel-button {
     background-color: #b5ead7;
     cursor: pointer;
-    transition: all 0.3s ease; /* Suaviza el hover */
-    padding: 10px 20px; /* Aumenta el padding horizontal */
+    transition: all 0.3s ease;
+    padding: 10px 20px;
 }
 
 .pixel-button:hover {
@@ -39,16 +39,18 @@ body {
     box-shadow: 2px 2px 0 #000;
 }
 
-/* Estilo del contenedor de la sala de chat */
+/* Sala de chat */
 .pixel-room {
-    background-color: #222;
+    background-color: rgb(129, 127, 155);
     padding: 1rem;
     border-radius: 10px;
-    margin: 20px;
+    margin: 20px auto;
+    max-width: 800px;
+    width: 95%;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Agregar un fondo para el formulario y los mensajes */
+/* Mensajes y formulario */
 .message-form {
     display: flex;
     justify-content: center;
@@ -74,60 +76,84 @@ body {
 }
 
 .online-count {
-    color: #00ff00; /* Colores de texto verde para mostrar la cantidad de usuarios online */
+    color: #00ff00;
     font-weight: bold;
 }
 
-.room-header h2 {
-    margin-bottom: 10px;
-}
-
-/* Estilos adicionales para el contenedor de los usuarios */
-.users-list {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #222;
-    border-radius: 5px;
-}
-
-/* Estilo para los cuadros de colores (selector de color) */
-.color-selector {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 10px;
-}
-
-.color-box {
-    width: 30px;
-    height: 30px;
-    margin: 0 5px;
-    border: 2px solid #000;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-}
-
-.color-box:hover {
-    transform: scale(1.1);
-}
-
-/* Estilos para el selector de colores */
+/* Selector de colores */
 .color-selector {
     display: flex;
     justify-content: center;
     margin: 10px 0;
-  }
-  
-  .color-option button {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%; /* Hacer los botones redondos */
+    gap: 8px;
+}
+
+.color-circle {
+    width: 20px;
+    height: 20px;
     border: 2px solid #000;
-    margin: 5px;
+    border-radius: 50%;
     cursor: pointer;
-    transition: transform 0.3s ease;
-  }
-  
-  .color-option button:hover {
-    transform: scale(1.1); /* Efecto al pasar el cursor */
-  }
-  
+    padding: 0;
+    margin: 0;
+    display: block;
+    box-sizing: border-box;
+    background-color: var(--color);
+    transition: none; /* Eliminamos transiciones que puedan afectar */
+    transform: none !important; /* Forzamos que no haya transformaciones */
+}
+
+.color-circle:hover {
+    outline: 2px solid white;
+}
+
+.color-circle.selected {
+    outline: 2px solid white;
+    box-shadow: 0 0 0 2px black;
+}
+
+/* Contenedores de zoom */
+.zoom-controls {
+    position: absolute;
+    top: 60px;              /* Menos espacio desde la parte superior */
+    right: -60px;            /* Menos espacio desde la parte derecha */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #222;
+    padding: 4px;
+    border: 3px solid #000;
+    z-index: 10;
+    border-radius: 5px;
+    width: auto;            /* Se adapta al tamaño de los botones */
+}
+
+/* Botones de zoom (+ y -) */
+.zoom-button {
+    width: 20px;        /* Botones pequeños */
+    height: 20px;
+    background-color: #b5ead7;
+    border: 2px solid #000;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;     /* Texto más pequeño */
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 3px 0;      /* Menor espaciado */
+}
+
+/* Hover sobre los botones */
+.zoom-button:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 #000;
+}
+
+/* Texto del nivel de zoom */
+.zoom-level {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 8px;    /* Texto más pequeño */
+    color: #ffffff;
+    margin-top: 5px;    /* Ajustado para estar más cerca de los botones */
+}

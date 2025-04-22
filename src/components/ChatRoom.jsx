@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-import { ref, push, onValue, off, serverTimestamp } from 'firebase/database';
+import { ref, push, onValue, off, serverTimestamp, set, onDisconnect, update } from 'firebase/database';
 import { db } from '../firebase';
 import '../styles/pixel-art.css';
 import ColorSelector from './ColorSelector';
@@ -11,13 +11,14 @@ export default function ChatRoom({ palette }) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
+  const [zoomLevel, setZoomLevel] = useState(1);
   const messagesEndRef = useRef(null);
   const username = state?.username || 'Anónimo';
   const messageSound = new Audio('/message-sound.mp3');
 
   const defaultPalette = {
-    primary: '#ff6f61',   // Color del texto o bordes
-    secondary: '#f5f5f5', // Color del fondo de la sala
+    primary: '#edeff5',
+    secondary: '#edeff5',
   };
 
   const [currentPalette, setCurrentPalette] = useState(palette || defaultPalette);
@@ -26,7 +27,7 @@ export default function ChatRoom({ palette }) {
   useEffect(() => {
     document.body.style.backgroundColor = bgColor;
     return () => {
-      document.body.style.backgroundColor = ''; // limpia cuando sales
+      document.body.style.backgroundColor = '';
     };
   }, [bgColor]);
 
@@ -49,12 +50,11 @@ export default function ChatRoom({ palette }) {
 
   useEffect(() => {
     const messagesRef = ref(db, `rooms/${roomId}/messages`);
-    const usersRef = ref(db, `rooms/${roomId}/users`);
     let previousCount = 0;
 
     onValue(messagesRef, (snapshot) => {
       const data = snapshot.val() || {};
-      const sorted = Object.values(data).sort((a, b) => a.timestamp - b.timestamp);
+      const sorted = Object.values(data).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
       if (sorted.length > previousCount) {
         const lastMsg = sorted[sorted.length - 1];
@@ -65,22 +65,46 @@ export default function ChatRoom({ palette }) {
       setMessages(sorted);
     });
 
+    return () => {
+      off(messagesRef);
+    };
+  }, [roomId, username]);
+
+  useEffect(() => {
+    const usersRef = ref(db, `rooms/${roomId}/users`);
+    
+    // Añade el usuario actual
+    const userRef = push(usersRef);
+    set(userRef, {
+      name: username,
+      online: true,
+      joinedAt: serverTimestamp()
+    });
+
+   
+    onDisconnect(userRef).update({
+      online: false,
+      leftAt: serverTimestamp()
+    });
+
+    
     onValue(usersRef, (snapshot) => {
       const data = snapshot.val() || {};
-      setUsers(Object.values(data));
+      const userList = Object.entries(data).map(([id, user]) => ({ id, ...user }));
+      setUsers(userList.filter(user => user.online));
     });
 
     return () => {
-      off(messagesRef);
+    
+      update(userRef, { online: false });
       off(usersRef);
     };
-  }, [roomId]);
+  }, [roomId, username]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Función para actualizar los colores
   const handlePaletteChange = (colorType, colorValue) => {
     setCurrentPalette((prevPalette) => ({
       ...prevPalette,
@@ -88,60 +112,83 @@ export default function ChatRoom({ palette }) {
     }));
   };
 
+  const increaseZoom = () => {
+    setZoomLevel(prev => Math.min(prev + 0.25, 2));
+  };
+
+  const decreaseZoom = () => {
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5));
+  };
+
   const renderMessages = () => {
     let lastUser = null;
-
-    return messages.map((msg, i) => {
-      const showUsername = msg.user !== lastUser;
+    let groupedMessages = [];
+  
+    messages.forEach((msg) => {
+      if (msg.user === lastUser) {
+        groupedMessages[groupedMessages.length - 1].messages.push(msg);
+      } else {
+        groupedMessages.push({ user: msg.user, messages: [msg] });
+      }
       lastUser = msg.user;
-
-      return (
-        <div key={i} className="pixel-message" style={{ borderColor: msg.color }}>
-          {showUsername && (
-            <div style={{ color: msg.color }}>
-              {msg.user}
-            </div>
-          )}
-          <div>{msg.text}</div>
-        </div>
-      );
     });
+  
+    return groupedMessages.map((group, i) => (
+      <div key={i} className="pixel-message" style={{ borderColor: group.messages[0].color }}>
+        <div style={{ color: group.messages[0].color }}>
+          {group.user}
+        </div>
+        {group.messages.map((msg, j) => (
+          <div key={j}>{msg.text}</div>
+        ))}
+      </div>
+    ));
   };
 
   return (
-    <div className="pixel-room" style={{ backgroundColor: currentPalette.secondary }}>
-      <div className="room-header">
-        <h2 className="pixel-text">SALA: {roomId}</h2>
-        <div className="online-count">
-          {users.filter(u => u.online).length} ONLINE
+    <div className="app" style={{ 
+      transform: `scale(${zoomLevel})`,
+      width: `${100/zoomLevel}%`,
+      height: `${100/zoomLevel}%`,
+      transformOrigin: 'top left'
+    }}>
+      <div className="pixel-room" style={{ backgroundColor: currentPalette.secondary }}>
+        <div className="room-header">
+          <h2 className="pixel-text">SALA: {roomId}</h2>
+          <div className="online-count">
+            {users.length} ONLINE
+          </div>
         </div>
-      </div>
 
-      {/* Selector de colores */}
-      <div className="color-selector-container">
         <ColorSelector 
           onChange={handlePaletteChange} 
           currentPalette={currentPalette} 
         />
-      </div>
 
-      <div className="chat-container">
-        <div className="messages-box">
-          {renderMessages()}
-          <div ref={messagesEndRef} />
+        <div className="chat-container">
+          <div className="messages-box">
+            {renderMessages()}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <form className="message-form" onSubmit={sendMessage}>
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="pixel-input"
+              placeholder="Escribe tu mensaje..."
+            />
+            <button type="submit" className="pixel-button">Enviar</button>
+          </form>
         </div>
-
-        <form className="message-form" onSubmit={sendMessage}>
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="pixel-input"
-            placeholder="Escribe tu mensaje..."
-          />
-          <button type="submit" className="pixel-button">Enviar</button>
-        </form>
       </div>
+
+<div className="zoom-controls">
+  <button className="zoom-button" onClick={decreaseZoom}>-</button>
+  <div className="zoom-level">{Math.round(zoomLevel * 100)}%</div>
+  <button className="zoom-button" onClick={increaseZoom}>+</button>
+</div>
     </div>
   );
 }

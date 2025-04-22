@@ -18,15 +18,10 @@ export default function ColorSelector({ onChange, currentPalette }) {
         <div key={index} className="color-option">
           <button
             onClick={() => handleColorChange('secondary', colorOption.color)}
-            style={{
-              backgroundColor: colorOption.color,
-              borderRadius: '50%',
-              width: '30px',
-              height: '30px',
-              border: 'none',
-              cursor: 'pointer',
-              margin: '5px',
-            }}
+            className={`color-circle ${
+              currentPalette.secondary === colorOption.color ? 'selected' : ''
+            }`}
+            style={{ backgroundColor: colorOption.color }}
           />
         </div>
       ))}

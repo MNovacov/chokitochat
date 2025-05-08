@@ -11,10 +11,6 @@ import chokito4 from "../assets/chokito4.png";
 export default function JoinScreen() {
   const [username, setUsername] = useState("");
   const [roomId, setRoomId] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [roomKey, setRoomKey] = useState("");
-  const [modalMessage, setModalMessage] = useState("");
-  const [isRoomNew, setIsRoomNew] = useState(false);
   const navigate = useNavigate();
 
   const images = [chokito1, chokito4, chokito2, chokito3];
@@ -36,58 +32,15 @@ export default function JoinScreen() {
     try {
       const snapshot = await get(roomRef);
 
-      if (snapshot.exists()) {
-        setIsRoomNew(false);
-        setModalMessage("Ingresar clave de la sala");
-      } else {
-        setIsRoomNew(true);
-        setModalMessage("Elegir clave para sala");
+      if (!snapshot.exists()) {
+        await set(roomRef, { key: null });
       }
 
-      setShowModal(true);
+      navigate(`/${roomId}`, { state: { username } });
+
     } catch (error) {
       console.error("Error al verificar la sala:", error);
     }
-  };
-
-  const handleModalConfirm = async () => {
-    const roomRef = ref(db, `rooms/${roomId}`);
-
-    try {
-      if (isRoomNew) {
-        if (!roomKey.trim()) {
-          alert("Debes ingresar una clave para la sala.");
-          return;
-        }
-
-        await set(roomRef, { key: roomKey });
-        navigate(`/${roomId}`, { state: { username } });
-
-      } else {
-        const snapshot = await get(roomRef);
-
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const storedKey = data.key;
-
-          if (storedKey === roomKey) {
-            navigate(`/${roomId}`, { state: { username } });
-          } else {
-            alert("Clave incorrecta.");
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error en la operación:", error);
-    }
-
-    setShowModal(false);
-    setRoomKey("");
-  };
-
-  const handleModalClose = () => {
-    setShowModal(false);
-    setRoomKey("");
   };
 
   return (
@@ -120,30 +73,6 @@ export default function JoinScreen() {
       <button onClick={handleJoin} className="pixel-button">
         ENTRAR
       </button>
-
-      {showModal && (
-        <div className="modal">
-          <div className="modal-content">
-            <h2>{modalMessage}</h2>
-            <input
-              type="password"
-              placeholder="Password"
-              value={roomKey}
-              onChange={(e) => setRoomKey(e.target.value)}
-              maxLength={4}
-              className="pixel-input"
-            />
-            <div className="modal-buttons">
-              <button onClick={handleModalConfirm} className="modal-button">
-                ✔️
-              </button>
-              <button onClick={handleModalClose} className="modal-button">
-                ❌
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -24,10 +24,10 @@ Un chat minimalista con estilo pixel art donde puedes elegir sala, nombre de usu
 - Despliegue automático con Vercel
 
 
-  <h2>🌐 Vercel</h2>
+## 🌐 Vercel</h2>
   <p>La aplicación está configurada para ser desplegada fácilmente en Vercel en el <a href="https://chokito-chat-git-master-mnovacovs-projects.vercel.app/#/83npxr">siguiente link</a>. </p>
 
-  <h2>💬 Créditos</h2>
+## 💬 Créditos</h2>
   <p>Desarrollado por <a href="https://github.com/MNovacov" target="_blank">MNovacov</a>.</p>
 
 </body>

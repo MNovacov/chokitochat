@@ -19,7 +19,7 @@ export default function ChatRoom({ palette }) {
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [isRoomNew, setIsRoomNew] = useState(false);
-  const [boxColor, setBoxColor] = useState("rgba(34, 34, 34, 0.75)");
+  const [boxColor, setBoxColor] = useState("rgba(0, 0, 0, 0.35)");
   const userRef = useRef(null);
   const messageSound = new Audio("/message-sound.mp3");
 
@@ -141,7 +141,7 @@ export default function ChatRoom({ palette }) {
       user: username,
       text: message.trim(),
       timestamp: serverTimestamp(),
-      color: "#edeff5",
+      color: "rgb(181, 234, 215)",
     });
 
     setMessage("");
@@ -165,14 +165,14 @@ export default function ChatRoom({ palette }) {
         key={i}
         className="pixel-message"
         style={{
-          borderColor: 'rgb(181, 234, 215)',
+          borderColor: "rgb(181, 234, 215)",
         }}
       >
         <div
           style={{
-            color: 'rgb(181, 234, 215)',
-            fontWeight: 'bold',
-            marginBottom: '4px',
+            color: "rgb(181, 234, 215)",
+            fontWeight: "bold",
+            marginBottom: "4px",
           }}
         >
           {group.user}
@@ -183,10 +183,9 @@ export default function ChatRoom({ palette }) {
       </div>
     ));
   };
-  
 
   return (
-    <div className="app">
+    <div className="app" style={{ transform: `scale(${zoomLevel})`, width: `${100 / zoomLevel}%`, height: `${100 / zoomLevel}%`, transformOrigin: "top left" }}>
       <div className="pixel-room" style={{ backgroundColor: boxColor }}>
         <div className="room-header">
           <h2 className="pixel-text">SALA: {roomId}</h2>
@@ -232,6 +231,12 @@ export default function ChatRoom({ palette }) {
           </div>
         </div>
       )}
+
+      <div className="zoom-controls">
+        <button className="zoom-button" onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.5))}>-</button>
+        <div className="zoom-level">{Math.round(zoomLevel * 100)}%</div>
+        <button className="zoom-button" onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2))}>+</button>
+      </div>
     </div>
   );
 }

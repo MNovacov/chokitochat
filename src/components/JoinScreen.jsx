@@ -1,24 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import '../styles/pixel-art.css';
-import chokito1 from '../assets/chokito1.png';
-import chokito2 from '../assets/chokito2.png';
-import chokito3 from '../assets/chokito3.png';
-import chokito4 from '../assets/chokito4.png';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ref, get, set } from "firebase/database";
+import { db } from "../firebase";
+import "../styles/pixel-art.css";
+import chokito1 from "../assets/chokito1.png";
+import chokito2 from "../assets/chokito2.png";
+import chokito3 from "../assets/chokito3.png";
+import chokito4 from "../assets/chokito4.png";
 
-export default function JoinScreen({ palettes, setColorPalette }) {
-  const [username, setUsername] = useState('');
-  const [roomId, setRoomId] = useState('');
+export default function JoinScreen() {
+  const [username, setUsername] = useState("");
+  const [roomId, setRoomId] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [roomKey, setRoomKey] = useState("");
+  const [modalMessage, setModalMessage] = useState("");
+  const [isRoomNew, setIsRoomNew] = useState(false);
   const navigate = useNavigate();
-
-  const handleJoin = () => {
-    if (!username.trim()) return alert('¡Necesitas un nombre!');
-    if (!roomId.trim()) return alert('¡Necesitas un ID de sala!');
-    
-    navigate(`/${roomId.trim()}`, { 
-      state: { username: username.trim() } 
-    });
-  };
 
   const images = [chokito1, chokito4, chokito2, chokito3];
   const [currentImage, setCurrentImage] = useState(0);
@@ -29,6 +26,69 @@ export default function JoinScreen({ palettes, setColorPalette }) {
     }, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleJoin = async () => {
+    if (!username.trim()) return alert("¡Necesitas un nombre!");
+    if (!roomId.trim()) return alert("¡Necesitas un ID de sala!");
+
+    const roomRef = ref(db, `rooms/${roomId}`);
+
+    try {
+      const snapshot = await get(roomRef);
+
+      if (snapshot.exists()) {
+        setIsRoomNew(false);
+        setModalMessage("Ingresar clave de la sala");
+      } else {
+        setIsRoomNew(true);
+        setModalMessage("Elegir clave para sala");
+      }
+
+      setShowModal(true);
+    } catch (error) {
+      console.error("Error al verificar la sala:", error);
+    }
+  };
+
+  const handleModalConfirm = async () => {
+    const roomRef = ref(db, `rooms/${roomId}`);
+
+    try {
+      if (isRoomNew) {
+        if (!roomKey.trim()) {
+          alert("Debes ingresar una clave para la sala.");
+          return;
+        }
+
+        await set(roomRef, { key: roomKey });
+        navigate(`/${roomId}`, { state: { username } });
+
+      } else {
+        const snapshot = await get(roomRef);
+
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const storedKey = data.key;
+
+          if (storedKey === roomKey) {
+            navigate(`/${roomId}`, { state: { username } });
+          } else {
+            alert("Clave incorrecta.");
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error en la operación:", error);
+    }
+
+    setShowModal(false);
+    setRoomKey("");
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    setRoomKey("");
+  };
 
   return (
     <div className="pixel-screen">
@@ -60,6 +120,30 @@ export default function JoinScreen({ palettes, setColorPalette }) {
       <button onClick={handleJoin} className="pixel-button">
         ENTRAR
       </button>
+
+      {showModal && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>{modalMessage}</h2>
+            <input
+              type="password"
+              placeholder="Password"
+              value={roomKey}
+              onChange={(e) => setRoomKey(e.target.value)}
+              maxLength={4}
+              className="pixel-input"
+            />
+            <div className="modal-buttons">
+              <button onClick={handleModalConfirm} className="modal-button">
+                ✔️
+              </button>
+              <button onClick={handleModalClose} className="modal-button">
+                ❌
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

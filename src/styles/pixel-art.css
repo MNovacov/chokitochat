@@ -1,18 +1,25 @@
-/* Fuente y base */
+
 body {
+    background-color: rgb(199, 206, 234); 
     font-family: 'Press Start 2P', cursive;
     margin: 0;
     padding: 0;
     image-rendering: pixelated;
+    overflow: hidden; 
+    height: 100vh;    
 }
 
-/* Contenedor principal */
+
 .app {
-    min-height: 100vh;
+    height: 80vh; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
     padding: 20px;
+    box-sizing: border-box;
 }
 
-/* Elementos pixelados */
+
 .pixel-input, .pixel-button {
     font-family: 'Press Start 2P', cursive;
     border: 3px solid #000;
@@ -39,32 +46,46 @@ body {
     box-shadow: 2px 2px 0 #000;
 }
 
-/* Sala de chat */
+
 .pixel-room {
-    background-color: rgb(129, 127, 155);
+    background-color: transparent;
     padding: 1rem;
     border-radius: 10px;
-    margin: 20px auto;
+    margin: 0 auto;
+    height: 100%;
+    max-height: 90vh;
     max-width: 600px;
-    width: 100%;              
+    width: 100%;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-    box-sizing: border-box;   
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
-/* Mensajes y formulario */
+/* Chat layout interno */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+
+.messages-box {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #333;
+    border-radius: 5px;
+}
+
 .message-form {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 10px;
-}
-
-.messages-box {
-    max-height: 500px;
-    overflow-y: auto;
-    padding: 10px;
-    background-color: #333;
-    border-radius: 5px;
+    margin-top: 10px;
 }
 
 .pixel-message {
@@ -74,10 +95,10 @@ body {
     border-radius: 5px;
     background-color: #444;
     color: white;
-    max-width: 95%;             
-    word-wrap: break-word;     
-    white-space: normal;       
-    overflow-wrap: break-word; 
+    max-width: 95%;
+    word-wrap: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
 }
 
 .online-count {
@@ -85,7 +106,7 @@ body {
     font-weight: bold;
 }
 
-/* Selector de colores */
+
 .color-selector {
     display: flex;
     justify-content: center;
@@ -104,8 +125,8 @@ body {
     display: block;
     box-sizing: border-box;
     background-color: var(--color);
-    transition: none; 
-    transform: none !important; 
+    transition: none;
+    transform: none !important;
 }
 
 .color-circle:hover {
@@ -117,11 +138,11 @@ body {
     box-shadow: 0 0 0 2px black;
 }
 
-/* Contenedores de zoom */
+
 .zoom-controls {
     position: absolute;
-    top: 60px;              /* Menos espacio desde la parte superior */
-    right: -60px;            /* Menos espacio desde la parte derecha */
+    top: 60px;
+    right: -60px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -131,34 +152,47 @@ body {
     border: 3px solid #000;
     z-index: 10;
     border-radius: 5px;
-    width: auto;            
+    width: auto;
 }
 
-/* Botones de zoom (+ y -) */
 .zoom-button {
-    width: 30px;        
+    width: 30px;
     height: 30px;
     background-color: #b5ead7;
     border: 2px solid #000;
     font-family: 'Press Start 2P', cursive;
-    font-size: 10px;     
+    font-size: 10px;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 3px 0;      
+    margin: 3px 0;
 }
 
-/* Hover sobre los botones */
 .zoom-button:hover {
     transform: translate(1px, 1px);
     box-shadow: 2px 2px 0 #000;
 }
 
-/* Texto del nivel de zoom */
 .zoom-level {
     font-family: 'Press Start 2P', cursive;
-    font-size: 8px;    
+    font-size: 8px;
     color: #ffffff;
-    margin-top: 5px;    
+    margin-top: 5px;
 }
+.chokito-image {
+    max-height: 180px;
+    margin: 10px auto 20px;
+    display: block;
+    image-rendering: pixelated;
+  }
+ .pixel-screen {
+  width: 100vw;
+  height: 100vh;
+  background-color: rgb(199, 206, 234);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+ 

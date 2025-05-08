@@ -16,23 +16,24 @@ export default function ChatRoom({ palette }) {
   const username = state?.username || 'Anónimo';
   const messageSound = new Audio('/message-sound.mp3');
 
-  const defaultPalette = {
-    primary: '#edeff5',
-    secondary: '#edeff5',
-  };
-
-  const [currentPalette, setCurrentPalette] = useState(palette || defaultPalette);
+  
   const [bgColor, setBgColor] = useState('rgb(199, 206, 234)');
+  
+  const [boxColor, setBoxColor] = useState('rgb(34, 34, 34)');
 
   useEffect(() => {
     document.body.style.backgroundColor = bgColor;
+    document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.backgroundColor = '';
+      document.body.style.overflow = 'auto';
     };
   }, [bgColor]);
 
-  const handleColorChange = (_, colorValue) => {
-    setBgColor(colorValue);
+  const handleColorChange = (colorType, colorValue) => {
+    if (colorType === 'secondary') {
+      setBoxColor(colorValue); // solo cambia el box
+    }
   };
 
   const sendMessage = (e) => {
@@ -43,7 +44,7 @@ export default function ChatRoom({ palette }) {
       user: username,
       text: message.trim(),
       timestamp: serverTimestamp(),
-      color: currentPalette.primary,
+      color: '#edeff5',
     });
     setMessage('');
   };
@@ -72,8 +73,6 @@ export default function ChatRoom({ palette }) {
 
   useEffect(() => {
     const usersRef = ref(db, `rooms/${roomId}/users`);
-    
-    // Añade el usuario actual
     const userRef = push(usersRef);
     set(userRef, {
       name: username,
@@ -81,13 +80,11 @@ export default function ChatRoom({ palette }) {
       joinedAt: serverTimestamp()
     });
 
-   
     onDisconnect(userRef).update({
       online: false,
       leftAt: serverTimestamp()
     });
 
-    
     onValue(usersRef, (snapshot) => {
       const data = snapshot.val() || {};
       const userList = Object.entries(data).map(([id, user]) => ({ id, ...user }));
@@ -95,7 +92,6 @@ export default function ChatRoom({ palette }) {
     });
 
     return () => {
-    
       update(userRef, { online: false });
       off(usersRef);
     };
@@ -104,13 +100,6 @@ export default function ChatRoom({ palette }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  const handlePaletteChange = (colorType, colorValue) => {
-    setCurrentPalette((prevPalette) => ({
-      ...prevPalette,
-      [colorType]: colorValue,
-    }));
-  };
 
   const increaseZoom = () => {
     setZoomLevel(prev => Math.min(prev + 0.25, 2));
@@ -123,7 +112,7 @@ export default function ChatRoom({ palette }) {
   const renderMessages = () => {
     let lastUser = null;
     let groupedMessages = [];
-  
+
     messages.forEach((msg) => {
       if (msg.user === lastUser) {
         groupedMessages[groupedMessages.length - 1].messages.push(msg);
@@ -132,7 +121,7 @@ export default function ChatRoom({ palette }) {
       }
       lastUser = msg.user;
     });
-  
+
     return groupedMessages.map((group, i) => (
       <div key={i} className="pixel-message" style={{ borderColor: group.messages[0].color }}>
         <div style={{ color: group.messages[0].color }}>
@@ -146,13 +135,13 @@ export default function ChatRoom({ palette }) {
   };
 
   return (
-    <div className="app" style={{ 
+    <div className="app" style={{
       transform: `scale(${zoomLevel})`,
-      width: `${100/zoomLevel}%`,
-      height: `${100/zoomLevel}%`,
+      width: `${100 / zoomLevel}%`,
+      height: `${100 / zoomLevel}%`,
       transformOrigin: 'top left'
     }}>
-      <div className="pixel-room" style={{ backgroundColor: currentPalette.secondary }}>
+      <div className="pixel-room" style={{ backgroundColor: boxColor }}>
         <div className="room-header">
           <h2 className="pixel-text">SALA: {roomId}</h2>
           <div className="online-count">
@@ -160,9 +149,9 @@ export default function ChatRoom({ palette }) {
           </div>
         </div>
 
-        <ColorSelector 
-          onChange={handlePaletteChange} 
-          currentPalette={currentPalette} 
+        <ColorSelector
+          onChange={handleColorChange}
+          currentPalette={{ secondary: boxColor }}
         />
 
         <div className="chat-container">
@@ -184,11 +173,11 @@ export default function ChatRoom({ palette }) {
         </div>
       </div>
 
-<div className="zoom-controls">
-  <button className="zoom-button" onClick={decreaseZoom}>-</button>
-  <div className="zoom-level">{Math.round(zoomLevel * 100)}%</div>
-  <button className="zoom-button" onClick={increaseZoom}>+</button>
-</div>
+      <div className="zoom-controls">
+        <button className="zoom-button" onClick={decreaseZoom}>-</button>
+        <div className="zoom-level">{Math.round(zoomLevel * 100)}%</div>
+        <button className="zoom-button" onClick={increaseZoom}>+</button>
+      </div>
     </div>
   );
 }

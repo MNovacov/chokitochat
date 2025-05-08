@@ -11,9 +11,8 @@ Un chat minimalista con estilo pixel art donde puedes elegir sala, nombre de usu
 
 - 🎨 **Estilo pixel art** auténtico con fuentes retro
 - 👥 **Indicador de usuarios online** en tiempo real
-- 🌈 **Personalización de color** para tu chat
-- 🔍 **Zoom ajustable** para cambiar el tamaño del chat
-- 🚪 **Sistema de salas** con nombres personalizables
+- 🌈 **Personalización de color** para la interfaz de tu chat
+- 🚪  Sistema de salas con nombres personalizables y claves opcionales para mayor privacidad
 - 🔊 **Sonido de notificación** para nuevos mensajes
 
 ## 🛠️ Tecnologías utilizadas
@@ -24,18 +23,6 @@ Un chat minimalista con estilo pixel art donde puedes elegir sala, nombre de usu
 - Pixel art CSS personalizado
 - Despliegue automático con Vercel
 
-
-  <h2>📦 Instalación</h2>
-  <pre><code>npm install</code></pre>
-
-  <h2>🔧 Desarrollo local</h2>
-  <pre><code>npm run dev</code></pre>
-
-  <h2>🛠️ Build para producción</h2>
-  <pre><code>npm run build</code></pre>
-
-  <h2>👀 Preview del build</h2>
-  <pre><code>npm run preview</code></pre>
 
   <h2>🌐 Vercel</h2>
   <p>La aplicación está configurada para ser desplegada fácilmente en Vercel en el <a href="https://chokito-chat-git-master-mnovacovs-projects.vercel.app/#/83npxr">siguiente link</a>. </p>

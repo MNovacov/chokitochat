@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
-import { ref, push, onValue, off, serverTimestamp, set, get } from "firebase/database";
+import { ref, push, onValue, off, serverTimestamp, set, get, remove, onDisconnect } from "firebase/database";
 import { db } from "../firebase";
 import "../styles/pixel-art.css";
 import ColorSelector from "./ColorSelector";
@@ -14,13 +14,14 @@ export default function ChatRoom({ palette }) {
   const [users, setUsers] = useState([]);
   const [zoomLevel, setZoomLevel] = useState(1);
   const messagesEndRef = useRef(null);
-  const username = state?.username || "";
+  const username = state?.username || "Anónimo";
   const [roomKey, setRoomKey] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [boxColor, setBoxColor] = useState("rgb(34, 34, 34)");
   const [modalMessage, setModalMessage] = useState("");
   const [isRoomNew, setIsRoomNew] = useState(false);
-  const messageSound = new Audio('/message-sound.mp3');
+  const [boxColor, setBoxColor] = useState("rgba(34, 34, 34, 0.75)");
+  const userRef = useRef(null);
+  const messageSound = new Audio("/message-sound.mp3");
 
   useEffect(() => {
     if (!username) {
@@ -34,7 +35,7 @@ export default function ChatRoom({ palette }) {
 
       if (!snapshot.exists()) {
         setIsRoomNew(true);
-        setModalMessage("Elige una clave para la nueva sala:");
+        setModalMessage("La sala no existe. Elige una clave para crearla:");
         setShowModal(true);
       } else {
         const data = snapshot.val();
@@ -43,6 +44,7 @@ export default function ChatRoom({ palette }) {
           setShowModal(true);
         } else {
           listenForMessages();
+          updateUserCount();
         }
       }
     };
@@ -54,31 +56,28 @@ export default function ChatRoom({ palette }) {
     const roomRef = ref(db, `rooms/${roomId}`);
     const snapshot = await get(roomRef);
 
-    try {
-      if (isRoomNew) {
-        if (!roomKey.trim()) {
-          alert("Debes ingresar una clave para la sala.");
-          return;
-        }
+    if (isRoomNew) {
+      if (!roomKey.trim()) {
+        alert("Debes ingresar una clave para crear la sala.");
+        return;
+      }
 
-        await set(roomRef, { key: roomKey });
+      await set(roomRef, { key: roomKey });
+      setShowModal(false);
+      listenForMessages();
+      updateUserCount();
+    } else if (snapshot.exists()) {
+      const data = snapshot.val();
+      const storedKey = data.key;
+
+      if (storedKey === roomKey) {
         setShowModal(false);
         listenForMessages();
-
-      } else if (snapshot.exists()) {
-        const data = snapshot.val();
-        const storedKey = data.key;
-
-        if (storedKey === roomKey) {
-          setShowModal(false);
-          listenForMessages();
-        } else {
-          alert("Clave incorrecta.");
-          setRoomKey("");
-        }
+        updateUserCount();
+      } else {
+        alert("Clave incorrecta.");
+        setRoomKey("");
       }
-    } catch (error) {
-      console.error("Error al manejar la clave:", error);
     }
   };
 
@@ -87,26 +86,42 @@ export default function ChatRoom({ palette }) {
     navigate("/");
   };
 
+  const updateUserCount = () => {
+    const usersRef = ref(db, `rooms/${roomId}/users`);
+    userRef.current = push(usersRef);
+
+    set(userRef.current, {
+      name: username,
+      online: true,
+      joinedAt: serverTimestamp(),
+    });
+
+    onDisconnect(userRef.current).remove();
+
+    onValue(usersRef, (snapshot) => {
+      const usersData = snapshot.val() || {};
+      const onlineUsers = Object.values(usersData).filter(user => user.online);
+      setUsers(onlineUsers);
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (userRef.current) {
+        remove(userRef.current);
+      }
+    };
+  }, []);
+
   const listenForMessages = () => {
     const messagesRef = ref(db, `rooms/${roomId}/messages`);
-    let previousCount = 0;
 
     onValue(messagesRef, (snapshot) => {
       const data = snapshot.val() || {};
       const sorted = Object.values(data).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
-      if (sorted.length > previousCount) {
-        const lastMsg = sorted[sorted.length - 1];
-        if (lastMsg.user !== username) messageSound.play();
-      }
-
-      previousCount = sorted.length;
       setMessages(sorted);
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     });
-
-    return () => {
-      off(messagesRef);
-    };
   };
 
   const handleColorChange = (colorType, colorValue) => {
@@ -123,7 +138,7 @@ export default function ChatRoom({ palette }) {
       user: username,
       text: message.trim(),
       timestamp: serverTimestamp(),
-      color: '#edeff5',
+      color: "#edeff5",
     });
 
     setMessage("");
@@ -153,22 +168,14 @@ export default function ChatRoom({ palette }) {
   };
 
   return (
-    <div className="app" style={{
-      transform: `scale(${zoomLevel})`,
-      width: `${100 / zoomLevel}%`,
-      height: `${100 / zoomLevel}%`,
-      transformOrigin: "top left",
-    }}>
+    <div className="app">
       <div className="pixel-room" style={{ backgroundColor: boxColor }}>
         <div className="room-header">
           <h2 className="pixel-text">SALA: {roomId}</h2>
           <div className="online-count">{users.length} ONLINE</div>
         </div>
 
-        <ColorSelector
-          onChange={handleColorChange}
-          currentPalette={{ secondary: boxColor }}
-        />
+        <ColorSelector onChange={handleColorChange} currentPalette={{ secondary: boxColor }} />
 
         <div className="chat-container">
           <div className="messages-box">
@@ -207,12 +214,6 @@ export default function ChatRoom({ palette }) {
           </div>
         </div>
       )}
-
-      <div className="zoom-controls">
-        <button className="zoom-button" onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.5))}>-</button>
-        <div className="zoom-level">{Math.round(zoomLevel * 100)}%</div>
-        <button className="zoom-button" onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2))}>+</button>
-      </div>
     </div>
   );
 }

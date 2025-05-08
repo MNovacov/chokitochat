@@ -279,12 +279,12 @@ body {
   }
   
   .modal-button {
-    width: 48px;  /* Tamaño fijo para los íconos */
+    width: 48px;  
     height: 48px;
     background-color: #b5ead7;
     border: 2px solid #000;
     font-family: 'Press Start 2P', cursive;
-    font-size: 24px;  /* Tamaño del ícono */
+    font-size: 24px;  
     cursor: pointer;
     transition: all 0.3s ease;
     box-sizing: border-box;

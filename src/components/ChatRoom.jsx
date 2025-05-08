@@ -115,12 +115,15 @@ export default function ChatRoom({ palette }) {
 
   const listenForMessages = () => {
     const messagesRef = ref(db, `rooms/${roomId}/messages`);
-
+  
     onValue(messagesRef, (snapshot) => {
       const data = snapshot.val() || {};
       const sorted = Object.values(data).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
       setMessages(sorted);
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     });
   };
 
@@ -147,7 +150,7 @@ export default function ChatRoom({ palette }) {
   const renderMessages = () => {
     let lastUser = null;
     let groupedMessages = [];
-
+  
     messages.forEach((msg) => {
       if (msg.user === lastUser) {
         groupedMessages[groupedMessages.length - 1].messages.push(msg);
@@ -156,16 +159,31 @@ export default function ChatRoom({ palette }) {
       }
       lastUser = msg.user;
     });
-
+  
     return groupedMessages.map((group, i) => (
-      <div key={i} className="pixel-message" style={{ borderColor: group.messages[0].color }}>
-        <div style={{ color: group.messages[0].color }}>{group.user}</div>
+      <div
+        key={i}
+        className="pixel-message"
+        style={{
+          borderColor: 'rgb(181, 234, 215)',
+        }}
+      >
+        <div
+          style={{
+            color: 'rgb(181, 234, 215)',
+            fontWeight: 'bold',
+            marginBottom: '4px',
+          }}
+        >
+          {group.user}
+        </div>
         {group.messages.map((msg, j) => (
           <div key={j}>{msg.text}</div>
         ))}
       </div>
     ));
   };
+  
 
   return (
     <div className="app">

@@ -1,5 +1,22 @@
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, onDisconnect, onValue, off, push, serverTimestamp } from 'firebase/database';
+import {
+  getDatabase,
+  ref,
+  set,
+  onDisconnect,
+  onValue,
+  off,
+  push,
+  serverTimestamp
+} from 'firebase/database';
+
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
+} from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,15 +31,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const storage = getStorage(app);
 
-// Función para registrar a un usuario en una sala
 function connectUserToRoom(roomId, username) {
   const userRef = ref(db, `rooms/${roomId}/users/${username}`);
-  set(userRef, true); // Marca como conectado
-  onDisconnect(userRef).remove(); // Se borra al desconectarse
+  set(userRef, true);
+  onDisconnect(userRef).remove();
 }
 
-// Escuchar los usuarios conectados en una sala
 function listenToRoomUsers(roomId, callback) {
   const usersRef = ref(db, `rooms/${roomId}/users`);
   onValue(usersRef, (snapshot) => {
@@ -31,7 +47,6 @@ function listenToRoomUsers(roomId, callback) {
   });
 }
 
-// Opcional: limpiar listeners si cambias de sala o desmontas
 function stopListeningToRoomUsers(roomId) {
   const usersRef = ref(db, `rooms/${roomId}/users`);
   off(usersRef);
@@ -39,6 +54,7 @@ function stopListeningToRoomUsers(roomId) {
 
 export {
   db,
+  storage,
   ref,
   set,
   push,
@@ -48,4 +64,8 @@ export {
   connectUserToRoom,
   listenToRoomUsers,
   stopListeningToRoomUsers,
+  storageRef,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
 };

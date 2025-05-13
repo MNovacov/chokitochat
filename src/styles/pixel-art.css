@@ -1,5 +1,6 @@
 body {
     background: radial-gradient(ellipse at bottom, #66e6f7 0%, #090a0f 100%);
+    overflow: hidden;
     font-family: 'Press Start 2P', cursive;
     margin: 0;
     padding: 0;
@@ -19,14 +20,19 @@ body {
   
   .stars {
     position: absolute;
-    width: 1px;
-    height: 1px;
+    top: 0;
+    left: 0;
+    width: 100vw; 
+    height: 100vh; 
     background: transparent;
     animation: animStar 50s linear infinite;
     z-index: 0;
+    overflow: hidden;
   }
   
   #stars1 {
+    width: 1px;
+    height: 1px;
     box-shadow: 779px 1331px #fff, 324px 42px #fff, 303px 586px #fff,
                 1312px 276px #fff, 451px 625px #fff, 521px 1931px #fff;
   }
@@ -34,6 +40,7 @@ body {
   #stars2 {
     width: 2px;
     height: 2px;
+    position: absolute;
     animation-duration: 100s;
     box-shadow: 1448px 320px #fff, 1775px 1663px #fff, 332px 1364px #fff,
                 878px 340px #fff, 569px 1832px #fff;
@@ -55,6 +62,7 @@ body {
       transform: translateY(-2000px);
     }
   }
+  
   
   .content-wrapper {
     position: absolute;

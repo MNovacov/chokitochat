@@ -21,7 +21,6 @@ export default function ChatRoom({ palette }) {
   const { roomId } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
-  const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -39,15 +38,10 @@ export default function ChatRoom({ palette }) {
   const [dragOver, setDragOver] = useState(false);
 
   useEffect(() => {
-    if (!username) {
-      navigate("/");
-      return;
-    }
-
+    if (!username) navigate("/");
     const verifyRoom = async () => {
       const roomRef = ref(db, `rooms/${roomId}`);
       const snapshot = await get(roomRef);
-
       if (!snapshot.exists()) {
         setIsRoomNew(true);
         setModalMessage("La sala no existe. Elige una clave para crearla:");
@@ -63,29 +57,21 @@ export default function ChatRoom({ palette }) {
         }
       }
     };
-
     verifyRoom();
   }, [roomId, username, navigate]);
 
   const handleModalConfirm = async () => {
     const roomRef = ref(db, `rooms/${roomId}`);
     const snapshot = await get(roomRef);
-
     if (isRoomNew) {
-      if (!roomKey.trim()) {
-        alert("Debes ingresar una clave para crear la sala.");
-        return;
-      }
-
+      if (!roomKey.trim()) return alert("Debes ingresar una clave para crear la sala.");
       await set(roomRef, { key: roomKey });
       setShowModal(false);
       listenForMessages();
       updateUserCount();
     } else if (snapshot.exists()) {
       const data = snapshot.val();
-      const storedKey = data.key;
-
-      if (storedKey === roomKey) {
+      if (data.key === roomKey) {
         setShowModal(false);
         listenForMessages();
         updateUserCount();
@@ -96,81 +82,40 @@ export default function ChatRoom({ palette }) {
     }
   };
 
-  const handleModalClose = () => {
-    setShowModal(false);
-    navigate("/");
-  };
+  const handleModalClose = () => setShowModal(false) || navigate("/");
 
   const updateUserCount = () => {
     const usersRef = ref(db, `rooms/${roomId}/users`);
     userRef.current = push(usersRef);
-
     set(userRef.current, {
       name: username,
       online: true,
       joinedAt: serverTimestamp()
     });
-
     onDisconnect(userRef.current).remove();
-
     onValue(usersRef, (snapshot) => {
       const usersData = snapshot.val() || {};
-      const onlineUsers = Object.values(usersData).filter((user) => user.online);
-      setUsers(onlineUsers);
+      setUsers(Object.values(usersData).filter((user) => user.online));
     });
   };
 
-  useEffect(() => {
-    return () => {
-      if (userRef.current) {
-        remove(userRef.current);
-      }
-    };
-  }, []);
+  useEffect(() => () => userRef.current && remove(userRef.current), []);
 
   const listenForMessages = () => {
     const messagesRef = ref(db, `rooms/${roomId}/messages`);
-
     onValue(messagesRef, (snapshot) => {
       const data = snapshot.val() || {};
-      const sorted = Object.entries(data)
-        .map(([key, val]) => ({ id: key, ...val }))
+      const sorted = Object.entries(data).map(([id, val]) => ({ id, ...val }))
         .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
       const prevLength = prevLengthRef.current;
-      const latest = sorted[sorted.length - 1];
+      const latest = sorted.at(-1);
       prevLengthRef.current = sorted.length;
-
-      if (
-        prevLength > 0 &&
-        sorted.length > prevLength &&
-        latest?.user !== username
-      ) {
-        messageSound.play().catch((err) =>
-          console.warn("No se pudo reproducir el sonido:", err)
-        );
+      if (prevLength && sorted.length > prevLength && latest?.user !== username) {
+        messageSound.play().catch(console.warn);
       }
-
       setMessages(sorted);
-
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     });
-  };
-
-  const sendMessage = (e) => {
-    e.preventDefault();
-    if (!message.trim()) return;
-
-    push(ref(db, `rooms/${roomId}/messages`), {
-      user: username,
-      text: message.trim(),
-      timestamp: Date.now(),
-      color: "rgb(181, 234, 215)"
-    });
-
-    setMessage("");
   };
 
   const sendImageMessage = async (file) => {
@@ -178,37 +123,20 @@ export default function ChatRoom({ palette }) {
     formData.append("image", file);
     formData.append("expiration", "180");
     formData.append("key", imgbbAPIKey);
-
-    const response = await fetch("https://api.imgbb.com/1/upload", {
-      method: "POST",
-      body: formData
-    });
-
+    const response = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
     const result = await response.json();
     if (!result.success) return alert("No se pudo subir la imagen.");
-
     const url = result.data.url;
     const msgRef = push(ref(db, `rooms/${roomId}/messages`));
-    await set(msgRef, {
-      user: username,
-      image: url,
-      timestamp: Date.now(),
-      color: "rgb(181, 234, 215)"
-    });
-
-    setTimeout(() => {
-      remove(msgRef);
-    }, 180000);
+    await set(msgRef, { user: username, image: url, timestamp: Date.now(), color: "rgb(181, 234, 215)" });
+    setTimeout(() => remove(msgRef), 30000);
   };
 
   const handlePaste = (e) => {
-    const items = e.clipboardData?.items;
-    if (items) {
-      for (const item of items) {
-        if (item.type.indexOf("image") !== -1) {
-          const file = item.getAsFile();
-          if (file) sendImageMessage(file);
-        }
+    for (const item of e.clipboardData?.items || []) {
+      if (item.type.includes("image")) {
+        const file = item.getAsFile();
+        if (file) sendImageMessage(file);
       }
     }
   };
@@ -217,9 +145,7 @@ export default function ChatRoom({ palette }) {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
-      sendImageMessage(file);
-    }
+    if (file?.type.startsWith("image/")) sendImageMessage(file);
   };
 
   const handleDragOver = () => setDragOver(true);
@@ -227,88 +153,52 @@ export default function ChatRoom({ palette }) {
   const handleUploadClick = () => fileInputRef.current.click();
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.type.startsWith("image/")) {
-      sendImageMessage(file);
-    }
+    if (file?.type.startsWith("image/")) sendImageMessage(file);
   };
 
-  const handleColorChange = (colorType, colorValue) => {
-    if (colorType === "secondary") {
-      setBoxColor(colorValue);
-    }
+  const handleColorChange = (type, val) => type === "secondary" && setBoxColor(val);
+
+  const handleTextMessage = (text) => {
+    push(ref(db, `rooms/${roomId}/messages`), {
+      user: username,
+      text: text.trim(),
+      timestamp: Date.now(),
+      color: "rgb(181, 234, 215)"
+    });
   };
 
   const renderMessages = () => {
     let lastUser = null;
-    let groupedMessages = [];
-
+    let grouped = [];
     messages.forEach((msg) => {
       if (msg.user === lastUser) {
-        groupedMessages[groupedMessages.length - 1].messages.push(msg);
+        grouped.at(-1).messages.push(msg);
       } else {
-        groupedMessages.push({ user: msg.user, messages: [msg] });
+        grouped.push({ user: msg.user, messages: [msg] });
       }
       lastUser = msg.user;
     });
-
-    return groupedMessages.map((group, i) => (
-      <div
-        key={i}
-        className="pixel-message"
-        style={{ borderColor: "rgb(181, 234, 215)" }}
-      >
-        <div
-          style={{
-            color: "rgb(181, 234, 215)",
-            fontWeight: "bold",
-            marginBottom: "4px"
-          }}
-        >
-          {group.user}
-        </div>
-        {group.messages.map((msg, j) => {
-          const isLast = j === group.messages.length - 1;
-          return (
-            <div key={j} style={{ position: "relative", marginBottom: "4px" }}>
-              {msg.text && <div>{msg.text}</div>}
-              {msg.image && (
-                <img
-                  src={msg.image}
-                  alt="imagen"
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "200px",
-                    borderRadius: "4px",
-                    marginTop: "4px"
-                  }}
-                />
-              )}
-              {isLast && msg.timestamp && (
-                <div
-                style={{
-                  marginTop: "6px",
-                  fontSize: "0.6rem",
-                  opacity: 0.6,
-                  textAlign: "right",
-                }}
-              >
-                  {(() => {
-      const date = new Date(msg.timestamp);
-      const now = new Date();
-      const isToday = date.toDateString() === now.toDateString();
-      const formattedTime = date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-      const formattedDate = `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`;
-
-      return isToday ? formattedTime : `${formattedDate} ${formattedTime}`;
-                  })()}
-                </div>
-              )}
-            </div>
-          );
-        })}
+    return grouped.map((group, i) => (
+      <div key={i} className="pixel-message" style={{ borderColor: "rgb(181, 234, 215)" }}>
+        <div style={{ color: "rgb(181, 234, 215)", fontWeight: "bold", marginBottom: "4px" }}>{group.user}</div>
+        {group.messages.map((msg, j) => (
+          <div key={j} style={{ marginBottom: "4px" }}>
+            {msg.text && <div>{msg.text}</div>}
+            {msg.image && <img src={msg.image} alt="imagen" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "4px", marginTop: "4px" }} />}
+            {j === group.messages.length - 1 && msg.timestamp && (
+              <div style={{ marginTop: "6px", fontSize: "0.6rem", opacity: 0.6, textAlign: "right" }}>
+                {(() => {
+                  const d = new Date(msg.timestamp);
+                  const now = new Date();
+                  const isToday = d.toDateString() === now.toDateString();
+                  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                  const date = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+                  return isToday ? time : `${date} ${time}`;
+                })()}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     ));
   };
@@ -317,37 +207,16 @@ export default function ChatRoom({ palette }) {
     <div
       className="app"
       onPaste={handlePaste}
-      onDragOver={(e) => {
-        e.preventDefault();
-        handleDragOver();
-      }}
+      onDragOver={(e) => { e.preventDefault(); handleDragOver(); }}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      style={{
-        transform: `scale(${zoomLevel})`,
-        width: `${100 / zoomLevel}%`,
-        height: `${100 / zoomLevel}%`,
-        transformOrigin: "top left"
-      }}
+      style={{ transform: `scale(${zoomLevel})`, width: `${100 / zoomLevel}%`, height: `${100 / zoomLevel}%`, transformOrigin: "top left" }}
     >
       <div className="pixel-room" style={{ backgroundColor: boxColor, position: "relative" }}>
         {dragOver && (
-          <div style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            color: "white",
-            fontSize: "0.75rem",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 999,
-            pointerEvents: "none",
-            fontFamily: "'Press Start 2P', cursive"
-          }}>Suelta para enviar imagen</div>
+          <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", color: "white", fontSize: "0.75rem", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 999, pointerEvents: "none", fontFamily: "'Press Start 2P', cursive" }}>
+            Suelta para enviar imagen
+          </div>
         )}
 
         <div className="room-header">
@@ -355,10 +224,7 @@ export default function ChatRoom({ palette }) {
           <div className="online-count">{users.length} ONLINE</div>
         </div>
 
-        <ColorSelector
-          onChange={handleColorChange}
-          currentPalette={{ secondary: boxColor }}
-        />
+        <ColorSelector onChange={handleColorChange} currentPalette={{ secondary: boxColor }} />
 
         <div className="chat-container">
           <div className="messages-box">
@@ -366,13 +232,13 @@ export default function ChatRoom({ palette }) {
             <div ref={messagesEndRef} />
           </div>
 
-          <form className="message-form" onSubmit={sendMessage}>
+          <form className="message-form" onSubmit={(e) => { e.preventDefault(); handleTextMessage(e.target.elements.msg.value); e.target.reset(); }}>
             <input
+              name="msg"
               type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
               className="pixel-input"
               placeholder="Escribe tu mensaje..."
+              autoComplete="off"
             />
             <input
               type="file"
@@ -390,9 +256,7 @@ export default function ChatRoom({ palette }) {
             >
               +
             </button>
-            <button type="submit" className="pixel-button">
-              Enviar
-            </button>
+            <button type="submit" className="pixel-button">Enviar</button>
           </form>
         </div>
       </div>
@@ -409,31 +273,17 @@ export default function ChatRoom({ palette }) {
               className="pixel-input"
             />
             <div className="modal-buttons">
-              <button className="modal-button" onClick={handleModalConfirm}>
-                ✔️
-              </button>
-              <button className="modal-button" onClick={handleModalClose}>
-                ❌
-              </button>
+              <button className="modal-button" onClick={handleModalConfirm}>✔️</button>
+              <button className="modal-button" onClick={handleModalClose}>❌</button>
             </div>
           </div>
         </div>
       )}
 
       <div className="zoom-controls">
-        <button
-          className="zoom-button"
-          onClick={() => setZoomLevel((prev) => Math.max(prev - 0.25, 0.5))}
-        >
-          -
-        </button>
+        <button className="zoom-button" onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.5))}>-</button>
         <div className="zoom-level">{Math.round(zoomLevel * 100)}%</div>
-        <button
-          className="zoom-button"
-          onClick={() => setZoomLevel((prev) => Math.min(prev + 0.25, 2))}
-        >
-          +
-        </button>
+        <button className="zoom-button" onClick={() => setZoomLevel(prev => Math.min(prev + 0.25, 2))}>+</button>
       </div>
     </div>
   );

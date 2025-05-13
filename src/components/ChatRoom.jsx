@@ -285,15 +285,13 @@ export default function ChatRoom({ palette }) {
               )}
               {isLast && msg.timestamp && (
                 <div
-                  style={{
-                    position: "absolute",
-                    bottom: 0,
-                    right: 0,
-                    fontSize: "0.6rem",
-                    opacity: 0.6,
-                    paddingRight: "2px"
-                  }}
-                >
+                style={{
+                  marginTop: "6px",
+                  fontSize: "0.6rem",
+                  opacity: 0.6,
+                  textAlign: "right",
+                }}
+              >
                   {(() => {
                     const date = new Date(msg.timestamp);
                     const now = new Date();

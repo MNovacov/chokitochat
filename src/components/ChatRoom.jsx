@@ -4,7 +4,6 @@ import {
   ref,
   push,
   onValue,
-  off,
   serverTimestamp,
   set,
   get,
@@ -121,7 +120,7 @@ export default function ChatRoom({ palette }) {
   const sendImageMessage = async (file) => {
     const formData = new FormData();
     formData.append("image", file);
-    formData.append("expiration", "30");
+    formData.append("expiration", "60");
     formData.append("key", imgbbAPIKey);
     const response = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
     const result = await response.json();
@@ -129,7 +128,7 @@ export default function ChatRoom({ palette }) {
     const url = result.data.url;
     const msgRef = push(ref(db, `rooms/${roomId}/messages`));
     await set(msgRef, { user: username, image: url, timestamp: Date.now(), color: "rgb(181, 234, 215)" });
-    setTimeout(() => remove(msgRef), 30000);
+    setTimeout(() => remove(msgRef), 60000);
   };
 
   const handlePaste = (e) => {
@@ -167,6 +166,8 @@ export default function ChatRoom({ palette }) {
     });
   };
 
+  const deleteMessage = (msgId) => remove(ref(db, `rooms/${roomId}/messages/${msgId}`));
+
   const renderMessages = () => {
     let lastUser = null;
     let grouped = [];
@@ -179,10 +180,21 @@ export default function ChatRoom({ palette }) {
       lastUser = msg.user;
     });
     return grouped.map((group, i) => (
-      <div key={i} className="pixel-message" style={{ borderColor: "rgb(181, 234, 215)" }}>
+      <div
+        key={i}
+        className="pixel-message message-group"
+        style={{ borderColor: "rgb(181, 234, 215)", position: "relative" }}
+      >
         <div style={{ color: "rgb(181, 234, 215)", fontWeight: "bold", marginBottom: "4px" }}>{group.user}</div>
         {group.messages.map((msg, j) => (
-          <div key={j} style={{ marginBottom: "4px" }}>
+          <div key={j} style={{ marginBottom: "4px", position: "relative" }} className="message-item">
+            {msg.user === username && (
+              <button
+                onClick={() => deleteMessage(msg.id)}
+                className="delete-button"
+                title="Eliminar"
+              >✖</button>
+            )}
             {msg.text && <div>{msg.text}</div>}
             {msg.image && <img src={msg.image} alt="imagen" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "4px", marginTop: "4px" }} />}
             {j === group.messages.length - 1 && msg.timestamp && (
@@ -218,20 +230,16 @@ export default function ChatRoom({ palette }) {
             Suelta para enviar imagen
           </div>
         )}
-
         <div className="room-header">
           <h2 className="pixel-text">SALA: {roomId}</h2>
           <div className="online-count">{users.length} ONLINE</div>
         </div>
-
         <ColorSelector onChange={handleColorChange} currentPalette={{ secondary: boxColor }} />
-
         <div className="chat-container">
           <div className="messages-box">
             {renderMessages()}
             <div ref={messagesEndRef} />
           </div>
-
           <form className="message-form" onSubmit={(e) => { e.preventDefault(); handleTextMessage(e.target.elements.msg.value); e.target.reset(); }}>
             <input
               name="msg"

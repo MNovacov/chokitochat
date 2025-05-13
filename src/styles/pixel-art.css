@@ -304,6 +304,26 @@ body {
     transform: translate(1px, 1px);
     box-shadow: 1px 1px 0 #000;
   }
+  .message-item {
+    position: relative;
+  }
+  
+  .delete-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  
+  .message-item:hover .delete-button {
+    opacity: 1;
+  }
   
   
   

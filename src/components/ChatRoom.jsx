@@ -249,21 +249,34 @@ export default function ChatRoom({ palette }) {
               autoComplete="off"
             />
             <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              onChange={handleFileChange}
-              style={{ display: "none" }}
-            />
-            <button
-              type="button"
-              className="pixel-button"
-              onClick={handleUploadClick}
-              style={{ borderRadius: "50%", padding: "10px", width: "40px", height: "40px" }}
-              title="Adjuntar imagen"
-            >
-              +
-            </button>
+  type="file"
+  ref={fileInputRef}
+  accept="image/*"
+  style={{ display: "none" }}
+  onChange={(e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith("image/")) {
+      console.log("Imagen seleccionada:", file.name); // para debug
+      sendImageMessage(file);
+    }
+  }}
+/>
+
+<button
+  type="button"
+  className="pixel-button"
+  onClick={() => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; 
+      fileInputRef.current.click();
+    }
+  }}
+  style={{ borderRadius: "50%", padding: "10px", width: "40px", height: "40px" }}
+  title="Adjuntar imagen"
+>
+  +
+</button>
+
             <button type="submit" className="pixel-button">Enviar</button>
           </form>
         </div>

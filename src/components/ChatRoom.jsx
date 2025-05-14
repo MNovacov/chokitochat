@@ -24,6 +24,7 @@ export default function ChatRoom({ palette }) {
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [newMessageAlert, setNewMessageAlert] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const username = state?.username || "Anónimo";
@@ -36,6 +37,34 @@ export default function ChatRoom({ palette }) {
   const messageSound = new Audio("/message-sound.mp3");
   const prevLengthRef = useRef(0);
   const [dragOver, setDragOver] = useState(false);
+
+  const originalTitle = useRef(document.title);
+  const blinkInterval = useRef(null);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        clearInterval(blinkInterval.current);
+        document.title = originalTitle.current;
+        setNewMessageAlert(false);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearInterval(blinkInterval.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (newMessageAlert && document.hidden) {
+      blinkInterval.current = setInterval(() => {
+        document.title = document.title === "💬 Nuevo mensaje"
+          ? originalTitle.current
+          : "💬 Nuevo mensaje";
+      }, 1000);
+    }
+  }, [newMessageAlert]);
 
   useEffect(() => {
     if (!username) navigate("/");
@@ -112,6 +141,7 @@ export default function ChatRoom({ palette }) {
       prevLengthRef.current = sorted.length;
       if (prevLength && sorted.length > prevLength && latest?.user !== username) {
         messageSound.play().catch(console.warn);
+        if (document.hidden) setNewMessageAlert(true);
       }
       setMessages(sorted);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -202,7 +232,7 @@ export default function ChatRoom({ palette }) {
             {msg.text && <div>{msg.text}</div>}
             {msg.image && <img src={msg.image} alt="imagen" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "4px", marginTop: "4px" }} />}
             {j === group.messages.length - 1 && msg.timestamp && (
-              <div style={{ marginTop: "6px", fontSize: "0.6rem", opacity: 0.6, textAlign: "right" }}>
+              <div style={{ marginTop: "6px", fontSize: "0.6rem", opacity: 0.6, textAlign: "right", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "5px" }}>
                 {(() => {
                   const d = new Date(msg.timestamp);
                   const now = new Date();
@@ -211,6 +241,7 @@ export default function ChatRoom({ palette }) {
                   const date = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
                   return isToday ? time : `${date} ${time}`;
                 })()}
+                {newMessageAlert && document.hidden && <span style={{ width: "6px", height: "6px", backgroundColor: "red", borderRadius: "50%" }} />}
               </div>
             )}
           </div>

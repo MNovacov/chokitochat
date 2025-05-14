@@ -10,11 +10,12 @@ import {
   remove,
   onDisconnect
 } from "firebase/database";
+import { uploadFile } from "@uploadcare/upload-client";
 import { db } from "../firebase";
 import "../styles/pixel-art.css";
 import ColorSelector from "./ColorSelector";
 
-const imgbbAPIKey = "dfb9005a586dde94e04e1d305c1ca3b6";
+const uploadcarePublicKey = "dd2580a9c669d60b5d49";
 
 export default function ChatRoom({ palette }) {
   const { roomId } = useParams();
@@ -118,17 +119,24 @@ export default function ChatRoom({ palette }) {
   };
 
   const sendImageMessage = async (file) => {
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("expiration", "60");
-    formData.append("key", imgbbAPIKey);
-    const response = await fetch("https://api.imgbb.com/1/upload", { method: "POST", body: formData });
-    const result = await response.json();
-    if (!result.success) return alert("No se pudo subir la imagen.");
-    const url = result.data.url;
-    const msgRef = push(ref(db, `rooms/${roomId}/messages`));
-    await set(msgRef, { user: username, image: url, timestamp: Date.now(), color: "rgb(181, 234, 215)" });
-    setTimeout(() => remove(msgRef), 60000);
+    try {
+      const result = await uploadFile(file, {
+        publicKey: uploadcarePublicKey,
+        store: "auto",
+      });
+      const url = result.cdnUrl;
+      const msgRef = push(ref(db, `rooms/${roomId}/messages`));
+      await set(msgRef, {
+        user: username,
+        image: url,
+        timestamp: Date.now(),
+        color: "rgb(181, 234, 215)"
+      });
+      setTimeout(() => remove(msgRef), 60000);
+    } catch (err) {
+      console.error("Error al subir imagen:", err);
+      alert("No se pudo subir la imagen.");
+    }
   };
 
   const handlePaste = (e) => {
@@ -180,14 +188,10 @@ export default function ChatRoom({ palette }) {
       lastUser = msg.user;
     });
     return grouped.map((group, i) => (
-      <div
-        key={i}
-        className="pixel-message message-group"
-        style={{ borderColor: "rgb(181, 234, 215)", position: "relative" }}
-      >
+      <div key={i} className="pixel-message message-group" style={{ borderColor: "rgb(181, 234, 215)", position: "relative" }}>
         <div style={{ color: "rgb(181, 234, 215)", fontWeight: "bold", marginBottom: "4px" }}>{group.user}</div>
         {group.messages.map((msg, j) => (
-          <div key={j} style={{ marginBottom: "4px", position: "relative" }} className="message-item">
+          <div key={j} className="message-item" style={{ marginBottom: "4px", position: "relative" }}>
             {msg.user === username && (
               <button
                 onClick={() => deleteMessage(msg.id)}
@@ -216,8 +220,7 @@ export default function ChatRoom({ palette }) {
   };
 
   return (
-    <div
-      className="app"
+    <div className="app"
       onPaste={handlePaste}
       onDragOver={(e) => { e.preventDefault(); handleDragOver(); }}
       onDragLeave={handleDragLeave}
@@ -241,58 +244,18 @@ export default function ChatRoom({ palette }) {
             <div ref={messagesEndRef} />
           </div>
           <form className="message-form" onSubmit={(e) => { e.preventDefault(); handleTextMessage(e.target.elements.msg.value); e.target.reset(); }}>
-            <input
-              name="msg"
-              type="text"
-              className="pixel-input"
-              placeholder="Escribe tu mensaje..."
-              autoComplete="off"
-            />
-            <input
-  type="file"
-  ref={fileInputRef}
-  accept="image/*"
-  style={{ display: "none" }}
-  onChange={(e) => {
-    const file = e.target.files[0];
-    if (file && file.type.startsWith("image/")) {
-      console.log("Imagen seleccionada:", file.name); // para debug
-      sendImageMessage(file);
-    }
-  }}
-/>
-
-<button
-  type="button"
-  className="pixel-button"
-  onClick={() => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""; 
-      fileInputRef.current.click();
-    }
-  }}
-  style={{ borderRadius: "50%", padding: "10px", width: "40px", height: "40px" }}
-  title="Adjuntar imagen"
->
-  +
-</button>
-
+            <input name="msg" type="text" className="pixel-input" placeholder="Escribe tu mensaje..." autoComplete="off" />
+            <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
+            <button type="button" className="pixel-button" onClick={handleUploadClick} style={{ borderRadius: "50%", padding: "10px", width: "40px", height: "40px" }} title="Adjuntar imagen">+</button>
             <button type="submit" className="pixel-button">Enviar</button>
           </form>
         </div>
       </div>
-
       {showModal && (
         <div className="modal">
           <div className="modal-content">
             <h2>{modalMessage}</h2>
-            <input
-              type="password"
-              value={roomKey}
-              onChange={(e) => setRoomKey(e.target.value)}
-              maxLength={4}
-              className="pixel-input"
-            />
+            <input type="password" value={roomKey} onChange={(e) => setRoomKey(e.target.value)} maxLength={4} className="pixel-input" />
             <div className="modal-buttons">
               <button className="modal-button" onClick={handleModalConfirm}>✔️</button>
               <button className="modal-button" onClick={handleModalClose}>❌</button>
@@ -300,7 +263,6 @@ export default function ChatRoom({ palette }) {
           </div>
         </div>
       )}
-
       <div className="zoom-controls">
         <button className="zoom-button" onClick={() => setZoomLevel(prev => Math.max(prev - 0.25, 0.5))}>-</button>
         <div className="zoom-level">{Math.round(zoomLevel * 100)}%</div>

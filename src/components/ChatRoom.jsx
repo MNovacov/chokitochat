@@ -41,7 +41,7 @@ export default function ChatRoom({ palette }) {
   const originalTitle = useRef(document.title);
   const blinkInterval = useRef(null);
 
-  // === NUEVO: estado para indicador de escritura ===
+  
   const [typingUsers, setTypingUsers] = useState({});
   const typingTimeout = useRef(null);
 
@@ -158,7 +158,7 @@ export default function ChatRoom({ palette }) {
     });
   };
 
-  // === NUEVO: escuchar el nodo "typing" de la sala ===
+  
   useEffect(() => {
     const tRef = ref(db, `rooms/${roomId}/typing`);
     const unsub = onValue(tRef, (snap) => {
@@ -227,7 +227,7 @@ export default function ChatRoom({ palette }) {
   const deleteMessage = (msgId) =>
     remove(ref(db, `rooms/${roomId}/messages/${msgId}`));
 
-  // === NUEVO: funciones para marcar/desmarcar que estás escribiendo ===
+  
   const startTyping = () => {
     set(ref(db, `rooms/${roomId}/typing/${username}`), true);
     clearTimeout(typingTimeout.current);
@@ -356,7 +356,7 @@ export default function ChatRoom({ palette }) {
         transformOrigin: "top left"
       }}
     >
-      {/* AÑADIDO: clase modern-ui para activar el look moderno sin romper lo anterior */}
+      
       <div
         className="pixel-room modern-ui"
         style={{ backgroundColor: boxColor, position: "relative" }}
@@ -397,7 +397,7 @@ export default function ChatRoom({ palette }) {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* AÑADIDO: indicador de escritura */}
+         
           {Object.keys(typingUsers).filter((u) => u !== username).length > 0 && (
             <div className="typing-indicator">
               <div>
@@ -426,7 +426,7 @@ export default function ChatRoom({ palette }) {
               e.preventDefault();
               handleTextMessage(e.target.elements.msg.value);
               e.target.reset();
-              stopTyping(); // limpia el estado "escribiendo" al enviar
+              stopTyping(); 
             }}
           >
             <input
@@ -435,8 +435,8 @@ export default function ChatRoom({ palette }) {
               className="pixel-input"
               placeholder="Escribe tu mensaje..."
               autoComplete="off"
-              onChange={startTyping} // marca escribiendo al tipear
-              onBlur={stopTyping}    // y limpia al salir del input
+              onChange={startTyping} 
+              onBlur={stopTyping}    
             />
             <input
               type="file"

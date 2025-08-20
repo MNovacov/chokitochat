@@ -476,7 +476,7 @@ export default function ChatRoom({ palette }) {
     </div>
   </div>
 )}
-      <div className="zoom-controls">
+      <div className="zoom-controls modern-ui">
         <button
           className="zoom-button"
           onClick={() => setZoomLevel((prev) => Math.max(prev - 0.25, 0.5))}

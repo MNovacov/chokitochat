@@ -355,7 +355,7 @@ export default function ChatRoom() {
               onClick={handleUploadClick}
               title="Adjuntar imagen"
             >
-              <img src="/src/assets/addimage.png" alt="Adjuntar imagen" />
+              <img src="/addimage.png" alt="Adjuntar imagen" />
             </button>
 
             <button type="submit" className="pixel-button">Enviar</button>

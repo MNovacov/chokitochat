@@ -1,44 +1,38 @@
 import React from 'react';
 
-export default function ColorSelector({ onChange, currentPalette }) {
-  const hexToRgba = (hex, alpha = 0.31) => {
-    hex = hex.replace('#', '');
-  
-    if (hex.length === 3) {
-      hex = hex.split('').map(char => char + char).join('');
-    }
-  
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-  
+export default function ColorSelector({ onChange, currentTheme }) {
+  const hexToRgba = (hex, alpha = 0.35) => {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
-  const handleColorChange = (colorType, colorValue) => {
-    const rgbaColor = hexToRgba(colorValue, 0.35); 
-    onChange(colorType, rgbaColor);
-  };
-
-  const colors = [
-    { name: 'primary', color: '#000000' },
-    { name: 'secondary', color: '#00F2FB' },
-    { name: 'tertiary', color: '#00b71d' },
-    { name: 'quaternary', color: '#1e1e62' },
+  const THEMES = [
+    { className: 'theme-dark',   hex: '#000000', label: 'Negro'   }, 
+    { className: 'theme-cyan',   hex: '#00F2FB', label: 'Celeste' }, 
+    { className: 'theme-green',  hex: '#00b71d', label: 'Verde'   }, 
+    { className: 'theme-indigo', hex: '#1e1e62', label: 'Azul'    }, 
   ];
+
+  const pick = (opt) => {
+    onChange('secondary', hexToRgba(opt.hex, 0.35));  
+    onChange('theme', opt.className);                 
+  };
 
   return (
     <div className="color-selector">
-      {colors.map((colorOption, index) => (
-        <div key={index} className="color-option">
-          <button
-            onClick={() => handleColorChange('secondary', colorOption.color)}
-            className={`color-circle ${
-              currentPalette.secondary === colorOption.color ? 'selected' : ''
-            }`}
-            style={{ backgroundColor: colorOption.color }}
-          />
-        </div>
+      {THEMES.map((opt, i) => (
+        <button
+          key={i}
+          onClick={() => pick(opt)}
+          className={`color-circle ${currentTheme === opt.className ? 'selected' : ''}`}
+          style={{ backgroundColor: opt.hex }}
+          aria-label={opt.label}
+          title={opt.label}
+        />
       ))}
     </div>
   );

@@ -1,14 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import {
-  ref,
-  push,
-  onValue,
-  serverTimestamp,
-  set,
-  get,
-  remove,
-  onDisconnect
+  ref, push, onValue, serverTimestamp, set, get, remove, onDisconnect
 } from "firebase/database";
 import { uploadFile } from "@uploadcare/upload-client";
 import { db } from "../firebase";
@@ -17,10 +10,11 @@ import ColorSelector from "./ColorSelector";
 
 const uploadcarePublicKey = "dd2580a9c669d60b5d49";
 
-export default function ChatRoom({ palette }) {
+export default function ChatRoom() {
   const { roomId } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
+
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -33,6 +27,9 @@ export default function ChatRoom({ palette }) {
   const [modalMessage, setModalMessage] = useState("");
   const [isRoomNew, setIsRoomNew] = useState(false);
   const [boxColor, setBoxColor] = useState("rgba(0, 0, 0, 0.35)");
+
+  const [theme, setTheme] = useState("theme-dark");
+
   const userRef = useRef(null);
   const messageSound = new Audio("/message-sound.mp3");
   const prevLengthRef = useRef(0);
@@ -41,7 +38,6 @@ export default function ChatRoom({ palette }) {
   const originalTitle = useRef(document.title);
   const blinkInterval = useRef(null);
 
-  
   const [typingUsers, setTypingUsers] = useState({});
   const typingTimeout = useRef(null);
 
@@ -158,7 +154,6 @@ export default function ChatRoom({ palette }) {
     });
   };
 
-  
   useEffect(() => {
     const tRef = ref(db, `rooms/${roomId}/typing`);
     const unsub = onValue(tRef, (snap) => {
@@ -212,8 +207,10 @@ export default function ChatRoom({ palette }) {
     if (file?.type.startsWith("image/")) sendImageMessage(file);
   };
 
-  const handleColorChange = (type, val) =>
-    type === "secondary" && setBoxColor(val);
+  const handleColorChange = (type, val) => {
+    if (type === "secondary") setBoxColor(val);
+    if (type === "theme") setTheme(val); 
+  };
 
   const handleTextMessage = (text) => {
     push(ref(db, `rooms/${roomId}/messages`), {
@@ -224,10 +221,8 @@ export default function ChatRoom({ palette }) {
     });
   };
 
-  const deleteMessage = (msgId) =>
-    remove(ref(db, `rooms/${roomId}/messages/${msgId}`));
+  const deleteMessage = (msgId) => remove(ref(db, `rooms/${roomId}/messages/${msgId}`));
 
-  
   const startTyping = () => {
     set(ref(db, `rooms/${roomId}/typing/${username}`), true);
     clearTimeout(typingTimeout.current);
@@ -235,7 +230,6 @@ export default function ChatRoom({ palette }) {
       remove(ref(db, `rooms/${roomId}/typing/${username}`));
     }, 2000);
   };
-
   const stopTyping = () => {
     clearTimeout(typingTimeout.current);
     remove(ref(db, `rooms/${roomId}/typing/${username}`));
@@ -253,84 +247,29 @@ export default function ChatRoom({ palette }) {
       lastUser = msg.user;
     });
     return grouped.map((group, i) => (
-      <div
-        key={i}
-        className="pixel-message message-group"
-        style={{ borderColor: "rgb(181, 234, 215)", position: "relative" }}
-      >
-        <div
-          style={{
-            color: "rgb(181, 234, 215)",
-            fontWeight: "bold",
-            marginBottom: "4px"
-          }}
-        >
+      <div key={i} className="pixel-message message-group" style={{ borderColor: "rgb(181, 234, 215)", position: "relative" }}>
+        <div style={{ color: "rgb(181, 234, 215)", fontWeight: "bold", marginBottom: "4px" }}>
           {group.user}
         </div>
         {group.messages.map((msg, j) => (
-          <div
-            key={j}
-            className="message-item"
-            style={{ marginBottom: "4px", position: "relative" }}
-          >
+          <div key={j} className="message-item" style={{ marginBottom: "4px", position: "relative" }}>
             {msg.user === username && (
-              <button
-                onClick={() => deleteMessage(msg.id)}
-                className="delete-button"
-                title="Eliminar"
-              >
-                ✖
-              </button>
+              <button onClick={() => deleteMessage(msg.id)} className="delete-button" title="Eliminar">✖</button>
             )}
             {msg.text && <div>{msg.text}</div>}
             {msg.image && (
-              <img
-                src={msg.image}
-                alt="imagen"
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "200px",
-                  borderRadius: "4px",
-                  marginTop: "4px"
-                }}
-              />
+              <img src={msg.image} alt="imagen" style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "4px", marginTop: "4px" }} />
             )}
             {j === group.messages.length - 1 && msg.timestamp && (
-              <div
-                style={{
-                  marginTop: "6px",
-                  fontSize: "0.6rem",
-                  opacity: 0.6,
-                  textAlign: "right",
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  alignItems: "center",
-                  gap: "5px"
-                }}
-              >
+              <div style={{ marginTop: "6px", fontSize: "0.6rem", opacity: 0.6, textAlign: "right", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "5px" }}>
                 {(() => {
                   const d = new Date(msg.timestamp);
                   const now = new Date();
                   const isToday = d.toDateString() === now.toDateString();
-                  const time = d.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  });
-                  const date = `${String(d.getDate()).padStart(2, "0")}/${String(
-                    d.getMonth() + 1
-                  ).padStart(2, "0")}`;
+                  const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                  const date = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
                   return isToday ? time : `${date} ${time}`;
                 })()}
-                {newMessageAlert && document.hidden && (
-                  <span
-                    style={{
-                      width: "6px",
-                      height: "6px",
-                      backgroundColor: "red",
-                      borderRadius: "50%"
-                    }}
-                  />
-                )}
               </div>
             )}
           </div>
@@ -343,10 +282,7 @@ export default function ChatRoom({ palette }) {
     <div
       className="app"
       onPaste={handlePaste}
-      onDragOver={(e) => {
-        e.preventDefault();
-        handleDragOver();
-      }}
+      onDragOver={(e) => { e.preventDefault(); handleDragOver(); }}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       style={{
@@ -356,67 +292,40 @@ export default function ChatRoom({ palette }) {
         transformOrigin: "top left"
       }}
     >
-      
-      <div
-        className="pixel-room modern-ui"
-        style={{ backgroundColor: boxColor, position: "relative" }}
-      >
+      <div className={`pixel-room modern-ui ${theme}`} style={{ backgroundColor: boxColor, position: "relative" }}>
         {dragOver && (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              backgroundColor: "rgba(0,0,0,0.5)",
-              color: "white",
-              fontSize: "0.75rem",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              zIndex: 999,
-              pointerEvents: "none",
-              fontFamily: "'Press Start 2P', cursive"
-            }}
-          >
+          <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.5)", color: "white", fontSize: "0.75rem", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 999, pointerEvents: "none", fontFamily: "'Press Start 2P', cursive" }}>
             Suelta para enviar imagen
           </div>
         )}
+
         <div className="room-header">
           <h2 className="pixel-text">SALA: {roomId}</h2>
           <div className="online-count">{users.length} ONLINE</div>
         </div>
+
         <ColorSelector
           onChange={handleColorChange}
-          currentPalette={{ secondary: boxColor }}
+          currentTheme={theme}
         />
+
         <div className="chat-container">
           <div className="messages-box">
             {renderMessages()}
             <div ref={messagesEndRef} />
           </div>
 
-         
           {Object.keys(typingUsers).filter((u) => u !== username).length > 0 && (
             <div className="typing-indicator">
               <div>
                 {(() => {
-                  const others = Object.keys(typingUsers).filter(
-                    (u) => u !== username
-                  );
-                  if (others.length === 1)
-                    return `${others[0]} está escribiendo`;
-                  if (others.length === 2)
-                    return `${others[0]} y ${others[1]} están escribiendo`;
+                  const others = Object.keys(typingUsers).filter((u) => u !== username);
+                  if (others.length === 1) return `${others[0]} está escribiendo`;
+                  if (others.length === 2) return `${others[0]} y ${others[1]} están escribiendo`;
                   return `Varios están escribiendo`;
                 })()}
               </div>
-              <div className="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
+              <div className="typing-dots"><span></span><span></span><span></span></div>
             </div>
           )}
 
@@ -426,7 +335,7 @@ export default function ChatRoom({ palette }) {
               e.preventDefault();
               handleTextMessage(e.target.elements.msg.value);
               e.target.reset();
-              stopTyping(); 
+              stopTyping();
             }}
           >
             <input
@@ -435,62 +344,49 @@ export default function ChatRoom({ palette }) {
               className="pixel-input"
               placeholder="Escribe tu mensaje..."
               autoComplete="off"
-              onChange={startTyping} 
-              onBlur={stopTyping}    
+              onChange={startTyping}
+              onBlur={stopTyping}
             />
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              onChange={handleFileChange}
-              style={{ display: "none" }}
-            />
+            <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
+
             <button
               type="button"
-              className="pixel-button"
+              className="add-btn"
               onClick={handleUploadClick}
-              style={{ borderRadius: "50%", padding: "10px", width: "40px", height: "40px" }}
               title="Adjuntar imagen"
             >
-              +
+              <img src="/src/assets/addimage.png" alt="Adjuntar imagen" />
             </button>
+
             <button type="submit" className="pixel-button">Enviar</button>
           </form>
         </div>
+
+        <div className={`zoom-controls modern-ui ${theme}`}>
+          <button className="zoom-button" onClick={() => setZoomLevel((p) => Math.max(p - 0.25, 0.5))}>-</button>
+          <div className="zoom-level">{Math.round(zoomLevel * 100)}%</div>
+          <button className="zoom-button" onClick={() => setZoomLevel((p) => Math.min(p + 0.25, 2))}>+</button>
+        </div>
       </div>
+
       {showModal && (
-  <div className="modal modern-ui">   
-    <div className="modal-content">
-      <h2>{modalMessage}</h2>
-      <input
-        type="password"
-        value={roomKey}
-        onChange={(e) => setRoomKey(e.target.value)}
-        maxLength={4}
-        className="pixel-input"
-      />
-      <div className="modal-buttons">
-        <button className="modal-button" onClick={handleModalConfirm}>✔️</button>
-        <button className="modal-button" onClick={handleModalClose}>❌</button>
-      </div>
-    </div>
-  </div>
-)}
-      <div className="zoom-controls modern-ui">
-        <button
-          className="zoom-button"
-          onClick={() => setZoomLevel((prev) => Math.max(prev - 0.25, 0.5))}
-        >
-          -
-        </button>
-        <div className="zoom-level">{Math.round(zoomLevel * 100)}%</div>
-        <button
-          className="zoom-button"
-          onClick={() => setZoomLevel((prev) => Math.min(prev + 0.25, 2))}
-        >
-          +
-        </button>
-      </div>
+        <div className="modal modern-ui">
+          <div className="modal-content">
+            <h2>{modalMessage}</h2>
+            <input
+              type="password"
+              value={roomKey}
+              onChange={(e) => setRoomKey(e.target.value)}
+              maxLength={4}
+              className="pixel-input"
+            />
+            <div className="modal-buttons">
+              <button className="modal-button" onClick={handleModalConfirm}>✔️</button>
+              <button className="modal-button" onClick={handleModalClose}>❌</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
